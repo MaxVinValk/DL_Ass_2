@@ -3,9 +3,10 @@ from tensorflow.keras import layers
 import numpy as np
 from tensorflow import keras
 import tkinter as tk
+from tkinter import ttk
 from PIL import Image, ImageTk
 import sys
-
+import pickle
 
 def load_celeba(folder, image_size):
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(folder, image_size=image_size, batch_size=1)
@@ -108,10 +109,27 @@ def reset_z():
     set_after_panel(copiedZ)
 
 
+def load_average_vectors(filename):
+    with open(filename, "rb") as f:
+        return pickle.load(f)
+
+def apply_transform():
+    global vectorCombo, vectorMode, avgVecs, copiedZ
+
+    if vectorMode.get() == "add":
+        copiedZ = (copiedZ + avgVecs[vectorCombo.get()])
+    else:
+        copiedZ = (copiedZ - avgVecs[vectorCombo.get()])
+
+    set_after_panel(copiedZ)
+    change_dim_box()
+
+
 if __name__ == "__main__":
     CELEB_A_PATH = "celebaSubset/img_align_celeba"
     ENC_PATH = "enc"
     DEC_PATH = "dec"
+    AVG_VECTORS_PATH = "averageVectors"
 
     for i in range(1, len(sys.argv)):
         if (sys.argv[i] == "--celeba"):
@@ -120,7 +138,8 @@ if __name__ == "__main__":
             ENC_PATH = str(sys.argv[i+1])
         elif (sys.argv[i] == "--dec"):
             DEC_PATH = str(sys.argv[i+1])
-
+        elif (sys.argv[i] == "--avgVecs"):
+            AVG_VECTORS_PATH = str(sys.argv[i+1])
 
     NETWORK_IMAGE_INPUT_SIZE = (128, 128)
 
@@ -134,6 +153,11 @@ if __name__ == "__main__":
     print("Loading in encoder, decoder")
     enc = keras.models.load_model(ENC_PATH)
     dec = keras.models.load_model(DEC_PATH)
+
+    print("Loading in the average vectors")
+    avgVecs = load_average_vectors(AVG_VECTORS_PATH)
+    avgVecNames = list(avgVecs.keys())
+    avgVecNames.sort()
 
     print("Initializing GUI")
 
@@ -174,8 +198,20 @@ if __name__ == "__main__":
     resetBtn = tk.Button(root2, text="Reset Z", width=10, command=reset_z)
     randomBtn = tk.Button(root2, text="Randomize", width=10, command=randomize_z)
 
-    resetBtn.grid(column=int(50 / 15) * 2 + 1, row=50 % 15)
-    randomBtn.grid(column=int(51 / 15) * 2 + 1, row=51 % 15)
+    vectorCombo = ttk.Combobox(root2, values=avgVecNames, state="readonly")
+    vectorCombo.current(0)
+
+    vectorMode = ttk.Combobox(root2, values=["add", "subtract"], state="readonly")
+    vectorMode.current(0)
+
+    vectorBtn = tk.Button(root2, text="Apply transform", width=10, command=apply_transform)
+
+    resetBtn.grid(column=int(53 / 15) * 2 + 1, row=53 % 15)
+    randomBtn.grid(column=int(54 / 15) * 2 + 1, row=54 % 15)
+
+    vectorCombo.grid(column=int(57 / 15) * 2 + 1, row=57 % 15)
+    vectorMode.grid(column=int(58 / 15) * 2 + 1, row=58 % 15)
+    vectorBtn.grid(column=int(59 / 15) * 2 + 1, row=59 % 15)
 
     load_next_face()
 

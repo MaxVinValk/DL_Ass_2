@@ -1,6 +1,8 @@
 import sys
+import os
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -199,9 +201,67 @@ def load_celeba(folder, batch_size, image_size):
     return normalized_ds
 
 
+'''
+    folder: The folder containing the images. Note that the other functions usually take the folder that
+            contains the folder which has the images
+            
+    featureFile: The CSV file which lists which features are present in which images
+    
+    imageSize: The size of the image that we accept. A 2D tuple
+    
+    enc: The loaded encoder
+'''
+
+
+def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
+    attributeData = pd.read_csv(featureFile)
+    attributeNames = list(attributeData.columns)
+    attributeNames.remove('image_id')
+
+    featureCount = {}
+    featureVectors = {}
+
+    for attribute in attributeNames:
+        featureCount[attribute] = 0
+        featureVectors[attribute] = np.zeros(shape=(1, 50))
+
+    ctr = 0
+
+    for filename in os.listdir(folder):
+        if filename.endswith('.jpg'):
+
+            ctr += 1
+
+            if (ctr % 1000 == 0):
+                print(f"{ctr} images processed")
+
+            img = np.array(Image.open(f"{folder}/{filename}").resize(imageSize))
+            img = (img / 255)
+            img = img.reshape(1, 128, 128, 3)
+
+            _, _, z = enc(img)
+            z = z.numpy()
+
+            fileNumber = int(filename[:-4])
+            featuresForImage = attributeData.iloc[fileNumber - 1]
+
+            for attribute in attributeNames:
+                if featuresForImage[attribute] == 1:
+                    featureVectors[attribute] += z
+                    featureCount[attribute] += 1
+
+    for attribute in attributeNames:
+        featureVectors[attribute] /= featureCount[attribute]
+
+    return featureVectors, featureCount
+
+
 if __name__ == '__main__':
 
+    # General setup for all other modes
+
     DATA_PATH = "celeba/data"
+    RUN_MODE = "getLatent"
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
@@ -216,14 +276,15 @@ if __name__ == '__main__':
 
     BATCH_SIZE = 128
 
-    encoder = create_encoder(input_shape=input_shape, latent_dim=latent_dim)
-    decoder = create_decoder(latent_dim=latent_dim)
+    if (RUN_MODE == "train"):
+        encoder = create_encoder(input_shape=input_shape, latent_dim=latent_dim)
+        decoder = create_decoder(latent_dim=latent_dim)
 
-    vae = VAE(encoder, decoder)
+        vae = VAE(encoder, decoder)
 
-    data = load_celeba(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
+        data = load_celeba(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-    train_VAE(vae, data, epochs=20, batch_size=BATCH_SIZE)
+        train_VAE(vae, data, epochs=20, batch_size=BATCH_SIZE)
 
-    encoder.save("enc/")
-    decoder.save("dec/")
+        encoder.save("enc/")
+        decoder.save("dec/")
