@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow import pad
 from tensorflow import keras
 from tensorflow.keras import layers
 from PIL import Image
@@ -16,6 +17,9 @@ from PIL import Image
 # https://towardsdatascience.com/variational-autoencoders-vaes-for-dummies-step-by-step-tutorial-69e6d1c9d8e9
 
 # https://towardsdatascience.com/generating-new-faces-with-variational-autoencoders-d13cfcb5f0a8
+
+# Replication padding: 
+# https://www.machinecurve.com/index.php/2020/02/10/using-constant-padding-reflection-padding-and-replication-padding-with-keras/#replication-padding
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -102,6 +106,23 @@ def show_prediction(image):
     img.show()
 '''
 
+'''
+  2D Replication Padding
+  Attributes:
+    - padding: (padding_width, padding_height) tuple
+'''
+class ReplicationPadding2D(tf.keras.layers.Layer):
+    def __init__(self, padding=(1, 1), **kwargs):
+        self.padding = tuple(padding)
+        super(ReplicationPadding2D, self).__init__(**kwargs)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], input_shape[1] + 2 * self.padding[0], input_shape[2] + 2 * self.padding[1], input_shape[3])
+
+    def call(self, input_tensor, mask=None):
+        padding_width, padding_height = self.padding
+        return pad(input_tensor, [[0,0], [padding_height, padding_height], [padding_width, padding_width], [0,0] ], 'SYMMETRIC')
+
 
 def get_MNIST():
     (x_train, _), (x_test, _) = keras.datasets.mnist.load_data()
@@ -119,20 +140,28 @@ def train_VAE(vae, data, epochs, batch_size):
 def create_encoder(input_shape, latent_dim):
     encoder_inputs = keras.Input(shape=input_shape)
 
-    start_filters = 8
-    blocks = 3
-
     x = encoder_inputs
 
-    for i in range(0, blocks):
-        x = layers.Conv2D(start_filters * (2 ** i), 3, activation='relu', padding='same',
-                          kernel_initializer='he_normal')(x)
-        x = layers.Conv2D(start_filters * (2 ** i), 3, activation='relu', padding='same',
-                          kernel_initializer='he_normal')(x)
-        x = layers.MaxPooling2D()(x)
+    x = layers.Conv2D(32, (4, 4), strides=2, padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+
+    x = layers.Conv2D(64, (4, 4), strides=2, padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+
+    x = layers.Conv2D(128, (4, 4), strides=2, padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+
+    x = layers.Conv2D(256, (4, 4), strides=2, padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+
+    pre_flatten_shape = tf.keras.backend.int_shape(x)[1:]
 
     x = layers.Flatten()(x)
-    x = layers.Dense(128, activation="relu")(x)
+    # x = layers.Dense(128, activation="relu")(x)
 
     z_mean = layers.Dense(latent_dim, name="z_mean")(x)
     z_log_var = layers.Dense(latent_dim, name="z_log_var")(x)
@@ -140,32 +169,43 @@ def create_encoder(input_shape, latent_dim):
     z = Sampling()([z_mean, z_log_var])
 
     enc = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+    print( enc.summary())
+    return enc, pre_flatten_shape
 
-    return enc
 
-
-def create_decoder(latent_dim):
+def create_decoder(latent_dim, pre_flatten_shape):
     latent_inputs = keras.Input(shape=(latent_dim))
 
-    x = layers.Dense(16 * 16 * 32, activation="relu")(latent_inputs)
-    x = layers.Reshape((16, 16, 32))(x)
+    x = layers.Dense(np.prod(pre_flatten_shape))(latent_inputs)
+    x = layers.Reshape(pre_flatten_shape)(x)
 
     start_filters = 8
     blocks = 3
 
-    for i in range(0, blocks):
-        mult = (2 ** (blocks - i - 1))
+    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
+    x = layers.Conv2D(128, (3,3))(x)
+    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
 
-        x = layers.UpSampling2D()(x)
-        x = layers.Conv2D(start_filters * mult, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
-        x = layers.Conv2D(start_filters * mult, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
+    x = layers.Conv2D(64, (3,3))(x)
+    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
 
-    # decoder_outputs = layers.Conv2DTranspose(1, 3, activation="sigmoid", padding="same")(x)
+    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
+    x = layers.Conv2D(32, (3,3))(x)
+    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
 
-    decoder_outputs = layers.Conv2D(3, 1, activation='tanh')(x)
-
+    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
+    x = layers.Conv2D(128, (3,3)) (x)
+    decoder_outputs = ReplicationPadding2D(padding=(1,1))(x)
+ 
     dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
-
+    print(dec.summary())
     return dec
 
 
@@ -237,7 +277,7 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
 
             img = np.array(Image.open(f"{folder}/{filename}").resize(imageSize))
             img = (img / 255)
-            img = img.reshape(1, 128, 128, 3)
+            # img = img.reshape(1, 128, 128, 3)
 
             _, _, z = enc(img)
             z = z.numpy()
@@ -260,31 +300,31 @@ if __name__ == '__main__':
 
     # General setup for all other modes
 
-    DATA_PATH = "celeba/data"
-    RUN_MODE = "getLatent"
+    DATA_PATH = "celeba_vsmall/data"
+    RUN_MODE = "train"
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
 
     # Reshape size
-    RESIZE_HEIGHT = 128
-    RESIZE_WIDTH = 128
+    RESIZE_HEIGHT = 64
+    RESIZE_WIDTH = 64
 
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
-    latent_dim = 50
+    latent_dim = 100
 
     BATCH_SIZE = 128
 
     if (RUN_MODE == "train"):
-        encoder = create_encoder(input_shape=input_shape, latent_dim=latent_dim)
-        decoder = create_decoder(latent_dim=latent_dim)
+        encoder, pre_flatten_shape = create_encoder(input_shape=input_shape, latent_dim=latent_dim)
+        decoder = create_decoder(latent_dim=latent_dim, pre_flatten_shape=pre_flatten_shape)
 
         vae = VAE(encoder, decoder)
 
         data = load_celeba(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=20, batch_size=BATCH_SIZE)
+        # train_VAE(vae, data, epochs=2, batch_size=BATCH_SIZE)
 
-        encoder.save("enc/")
-        decoder.save("dec/")
+        # encoder.save("enc/")
+        # decoder.save("dec/")
