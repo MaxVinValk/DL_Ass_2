@@ -126,10 +126,10 @@ def apply_transform():
 
 
 if __name__ == "__main__":
-    CELEB_A_PATH = "celebaSubset/img_align_celeba"
+    CELEB_A_PATH = "celeba_vsmall/"
     ENC_PATH = "enc"
     DEC_PATH = "dec"
-    AVG_VECTORS_PATH = "averageVectors"
+    AVG_VECTORS_PATH = "latentexplorer/averageVectors"
 
     for i in range(1, len(sys.argv)):
         if (sys.argv[i] == "--celeba"):

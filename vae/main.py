@@ -8,6 +8,9 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from PIL import Image
 
+# Reshape size
+RESIZE_HEIGHT = 128
+RESIZE_WIDTH = 128
 
 # https://keras.io/examples/generative/vae/
 
@@ -260,16 +263,14 @@ if __name__ == '__main__':
 
     # General setup for all other modes
 
-    DATA_PATH = "celeba/data"
-    RUN_MODE = "getLatent"
+    DATA_PATH = "celeba_vsmall/data"
+    RUN_MODE = "train"
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
 
-    # Reshape size
-    RESIZE_HEIGHT = 128
-    RESIZE_WIDTH = 128
+
 
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
     latent_dim = 50
