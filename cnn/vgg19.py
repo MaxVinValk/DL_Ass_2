@@ -5,31 +5,46 @@ from tensorflow import keras
 from keras.applications.vgg19 import VGG19
 from keras import Model
 from tensorflow.keras import layers
-# from keras.models import Model
 
 
-def create_models(height, width, loss_layers):
-    input_shape = (height, width, 3)
+def create_models(input_shape, loss_layers):
+    """Creating sub-models of VGG19 for loss computation per layer
+
+    Args:
+        input_shape (int, int, int): input shape of the image
+        loss_layers (List[int]): nth layers of which the loss should be computed
+
+    Returns:
+        List[tf.keras.Model]: List of the sub-models of VGG19
+    """    
     # Classes not defined? classes=<number of classes>
     # If there is some kind of 'CERTIFICATE_VERIFY_FAILED' error, go to: 'Appplications/Python 3.6', and double click 'Install Certificates.command'
-
     model_vgg = VGG19(input_shape=input_shape,
                       weights="imagenet", include_top=False)
-    print('vgg summary:')
-    model_vgg.summary()
+    
+    ## Extra print statements
+    # print('vgg summary:')
+    # model_vgg.summary()
+
+    # Building all models
     models = []
     for idx, layer in enumerate(loss_layers):
-        model = keras.Sequential(name="model" + str(idx))
-        layers = model_vgg.layers[(0 if idx == 0 else loss_layers[idx-1]):layer+1]
-        # output_names = [lyr.name for lyr in model.layers]
-        # model = keras.Sequential(layers=layers)
+        # Take specific layers of the VGG19 model
+        layers = model_vgg.layers[(
+            0 if idx == 0 else loss_layers[idx-1]+1):layer+1] # '+1', since the Input is seen as a layer
+        model = keras.Sequential(name="model" + str(idx), layers=layers)
         model.trainable = False
-        for l in layers:
-            print(l)
-            model.add(l)
-        model.build(input_shape= (input_shape if idx == 0 else models[idx-1].output_shape))
-        # model.build(input_shape=model.input_shape)
-        model.summary()
+
+        # Setting correct input shape
+        input_shape = (input_shape if idx == 0 else models[idx - 1].output_shape)
+        model.build(input_shape=(input_shape))
+
+        ## Extra print statements
+        # for l in layers:
+        #     print(l)
+        # print('inpshape', input_shape)
+        # model.summary()
+
         models.append(model)
     return models
 
@@ -42,8 +57,6 @@ def get_loss(model, image):
     pass
 
 # TODO remove, this is for test purposes only.
-
-
 def load_celeba(folder, batch_size, image_size):
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
         folder, image_size=image_size, batch_size=batch_size)
@@ -54,10 +67,13 @@ def load_celeba(folder, batch_size, image_size):
     return normalized_ds
 
 
-models = create_models(128, 128, loss_layers=[3, 6, 9])
+models = create_models(input_shape=(128, 128, 3), loss_layers=[3, 6, 11])
 
-img = load_celeba("celeba_vsmall/data", 1, (128, 128))
-output_values = models[0].predict(img)
+img = load_celeba("celeba_one_image/data", 1, (128, 128))
+output_values = models[0].predict(img, batch_size=1)
+
+print('out', output_values)
+print('outshape', output_values.shape)
 # layer_name_to_output_value = dict(zip(output_names, output_values))
 # print(layer_name_to_output_value)
 
