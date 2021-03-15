@@ -35,6 +35,7 @@ class FPL():
             input_shape (int, int, int): input shape of the image
             batch_size ([type]): [description]
             loss_layers (List[int]): nth layers of which the loss should be computed
+            beta (List[int]): beta's for weighing individual loss of the layers. The length should equal the length of the loss_layers
         """
         if len(loss_layers) != len(beta):
             raise ValueError(
