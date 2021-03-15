@@ -25,10 +25,11 @@ class Layers(Enum):
 
 class FPL():
     """Feature Perceptual Loss
+       Contains the function calculate_fp_loss
     """
 
     def __init__(self, input_shape, batch_size, loss_layers, beta):
-        """[summary]
+        """Initializing Feature Perceptual Loss
 
         Args:
             input_shape (int, int, int): input shape of the image
@@ -54,7 +55,7 @@ class FPL():
         # Classes not defined? classes=<number of classes>
         # If there is some kind of 'CERTIFICATE_VERIFY_FAILED' error, go to: 'Appplications/Python 3.6', and double click 'Install Certificates.command'
         model_vgg = VGG19(input_shape=self.input_shape,
-                        weights="imagenet", include_top=False)
+                          weights="imagenet", include_top=False)
 
         # Extra print statements
         # print('vgg summary:')
@@ -71,7 +72,7 @@ class FPL():
 
             # Setting correct input shape
             sub_input_shape = (self.input_shape if idx ==
-                        0 else models[idx - 1].output_shape)
+                               0 else models[idx - 1].output_shape)
             model.build(input_shape=(sub_input_shape))
 
             # # Extra print statements
@@ -83,7 +84,7 @@ class FPL():
             models.append(model)
         return models
 
-    def calculate_fp_losses(self, img1, img2):
+    def calculate_fp_loss(self, img1, img2):
         """Calculating feature perceptual loss of 2 images
 
         Args:
@@ -112,7 +113,10 @@ class FPL():
             # print('pixel loss', pixel_loss[idx])
             # print('pixel loss shape', pixel_loss[idx].shape)
             # print('shape :', prediciton_1.shape)
-        return fp_losses
+        # Computing total loss by element wise multiplication of pf_losses and beta
+        total_loss = sum([f*b for f,
+                          b in zip(fp_losses, self.beta)])
+        return total_loss
 
 
 if __name__ == '__main__':
@@ -122,14 +126,15 @@ if __name__ == '__main__':
     batch_size = 4
     fpl = FPL(batch_size=batch_size, input_shape=(128, 128, 3),
               loss_layers=[Layers.ONE, Layers.TWO, Layers.THREE], beta=[0.5, 0.5, 0.5])
-    
+
     # TODO remove, this is for test purposes only.
     def load_celeba(folder, batch_size, image_size):
         # NOTE: shuffle is set to false, for test purposes (checking if presenting unshuffled data twice will result in 0 loss)
         train_ds = tf.keras.preprocessing.image_dataset_from_directory(
             folder, image_size=image_size, batch_size=batch_size, shuffle=False)
 
-        normalization_layer = layers.experimental.preprocessing.Rescaling(1. / 255)
+        normalization_layer = layers.experimental.preprocessing.Rescaling(
+            1. / 255)
         normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
         print(normalized_ds)
         return normalized_ds
@@ -139,5 +144,5 @@ if __name__ == '__main__':
     img2 = load_celeba("celeba_one_image2/data", batch_size, (128, 128))
 
     # Calculate the loss for a single image
-    loss = fpl.calculate_fp_losses(img1, img2)
+    loss = fpl.calculate_fp_loss(img1, img2)
     print('fp_loss:', loss)
