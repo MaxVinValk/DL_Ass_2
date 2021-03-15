@@ -9,6 +9,7 @@ from tensorflow.keras import layers
 from enum import Enum
 # from ..util import layers
 
+
 class Layers(Enum):
     """Layers with the first ReLU for feature perceptual loss
 
@@ -21,9 +22,11 @@ class Layers(Enum):
     FOUR = 12
     FIVE = 17
 
+
 class FPL():
     """Feature Perceptual Loss
     """
+
     def __init__(self, input_shape, batch_size, loss_layers, beta):
         """[summary]
 
@@ -33,14 +36,14 @@ class FPL():
             loss_layers (List[int]): nth layers of which the loss should be computed
         """
         if len(loss_layers) != len(beta):
-            raise ValueError('\'loss_layers\' and \'beta\' should be of the same length')
+            raise ValueError(
+                '\'loss_layers\' and \'beta\' should be of the same length')
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.loss_layers = loss_layers
         self.beta = beta
         # Creating the models
         self.models = self.create_models()
-
 
     def create_models(self):
         """Creating sub-models of VGG19 for loss computation per layer
@@ -80,7 +83,6 @@ class FPL():
             models.append(model)
         return models
 
-
     def calculate_fp_losses(self, img1, img2):
         """Calculating feature perceptual loss of 2 images
 
@@ -99,10 +101,12 @@ class FPL():
             prediciton_1 = model.predict(
                 img1 if idx == 0 else prediciton_1, batch_size=self.batch_size)
             prediciton_2 = model.predict(
-                img2 if idx == 0 else prediciton_2, batch_size=self.batch_size)  
+                img2 if idx == 0 else prediciton_2, batch_size=self.batch_size)
             mse = tf.keras.losses.MeanSquaredError(reduction='auto')
-            pixel_loss.append(mse(prediciton_1, prediciton_2))  # (= squared euclidean distance)
+            # (= squared euclidean distance)
+            pixel_loss.append(mse(prediciton_1, prediciton_2))
             fp_losses.append(np.sum(pixel_loss[idx]))
+
             # # Extra print statements
             # print('prediction shape', prediciton_1.shape)
             # print('pixel loss', pixel_loss[idx])
@@ -110,9 +114,11 @@ class FPL():
             # print('shape :', prediciton_1.shape)
         return fp_losses
 
+
 if __name__ == '__main__':
-        """Test the funcionality of the feature perceptual loss class
-        """    
+    """Test the funcionality of the feature perceptual loss class
+    """
+
     batch_size = 4
     fpl = FPL(batch_size=batch_size, input_shape=(128, 128, 3),
               loss_layers=[Layers.ONE, Layers.TWO, Layers.THREE], beta=[0.5, 0.5, 0.5])
