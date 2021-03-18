@@ -6,7 +6,7 @@ from tensorflow import keras
 from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras import layers
 # from enum import Enum
-from vgg_relu_layers import VGG_ReLu_Layer
+from cnn.vgg_relu_layers import VGG_ReLu_Layer
 
 
 class FPL():
