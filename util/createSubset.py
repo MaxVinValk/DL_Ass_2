@@ -4,12 +4,11 @@ from shutil import copyfile
 
 SOURCE_FOLDER = "celeba/data/img_align_celeba"
 TARGET_FOLDER = "celeba_vsmall/data/img_align_celeba"
-HOWMANY = 5
+HOWMANY = 500
 
 copied = 0
 
 oneP = int(HOWMANY / 100)
-
 
 for filename in os.listdir(SOURCE_FOLDER):
 

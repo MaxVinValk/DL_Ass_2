@@ -9,6 +9,9 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from PIL import Image
 
+# Reshape size
+RESIZE_HEIGHT = 128
+RESIZE_WIDTH = 128
 
 # https://keras.io/examples/generative/vae/
 
@@ -18,11 +21,12 @@ from PIL import Image
 
 # https://towardsdatascience.com/generating-new-faces-with-variational-autoencoders-d13cfcb5f0a8
 
-# Replication padding: 
+# Replication padding:
 # https://www.machinecurve.com/index.php/2020/02/10/using-constant-padding-reflection-padding-and-replication-padding-with-keras/#replication-padding
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit"""
@@ -44,7 +48,8 @@ class VAE(keras.Model):
         self.encoder = encoder
         self.decoder = decoder
         self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
-        self.reconstruction_loss_tracker = keras.metrics.Mean(name="reconstruction_loss")
+        self.reconstruction_loss_tracker = keras.metrics.Mean(
+            name="reconstruction_loss")
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
 
     @property
@@ -61,10 +66,12 @@ class VAE(keras.Model):
 
             reconstruction = self.decoder(z)
             reconstruction_loss = tf.reduce_mean(
-                tf.reduce_sum(keras.losses.binary_crossentropy(data, reconstruction), axis=(1, 2))
+                tf.reduce_sum(keras.losses.binary_crossentropy(
+                    data, reconstruction), axis=(1, 2))
             )
 
-            kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
+            kl_loss = -0.5 * (1 + z_log_var -
+                              tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
             total_loss = reconstruction_loss + kl_loss
 
@@ -111,6 +118,8 @@ def show_prediction(image):
   Attributes:
     - padding: (padding_width, padding_height) tuple
 '''
+
+
 class ReplicationPadding2D(tf.keras.layers.Layer):
     def __init__(self, padding=(1, 1), **kwargs):
         self.padding = tuple(padding)
@@ -121,7 +130,7 @@ class ReplicationPadding2D(tf.keras.layers.Layer):
 
     def call(self, input_tensor, mask=None):
         padding_width, padding_height = self.padding
-        return pad(input_tensor, [[0,0], [padding_height, padding_height], [padding_width, padding_width], [0,0] ], 'SYMMETRIC')
+        return pad(input_tensor, [[0, 0], [padding_height, padding_height], [padding_width, padding_width], [0, 0]], 'SYMMETRIC')
 
 
 def get_MNIST():
@@ -169,7 +178,7 @@ def create_encoder(input_shape, latent_dim):
     z = Sampling()([z_mean, z_log_var])
 
     enc = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
-    print( enc.summary())
+    print(enc.summary())
     return enc, pre_flatten_shape
 
 
@@ -182,28 +191,28 @@ def create_decoder(latent_dim, pre_flatten_shape):
     start_filters = 8
     blocks = 3
 
-    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
-    x = layers.Conv2D(128, (3,3))(x)
-    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+    x = layers.Conv2D(128, (3, 3))(x)
+    x = ReplicationPadding2D(padding=(1, 1))(x)
     x = layers.BatchNormalization()(x)
     x = layers.LeakyReLU()(x)
 
-    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
-    x = layers.Conv2D(64, (3,3))(x)
-    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+    x = layers.Conv2D(64, (3, 3))(x)
+    x = ReplicationPadding2D(padding=(1, 1))(x)
     x = layers.BatchNormalization()(x)
     x = layers.LeakyReLU()(x)
 
-    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
-    x = layers.Conv2D(32, (3,3))(x)
-    x = ReplicationPadding2D(padding=(1,1))(x)
+    x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+    x = layers.Conv2D(32, (3, 3))(x)
+    x = ReplicationPadding2D(padding=(1, 1))(x)
     x = layers.BatchNormalization()(x)
     x = layers.LeakyReLU()(x)
 
-    x = layers.UpSampling2D(size=(2,2), interpolation='nearest')(x)
-    x = layers.Conv2D(128, (3,3)) (x)
-    decoder_outputs = ReplicationPadding2D(padding=(1,1))(x)
- 
+    x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+    x = layers.Conv2D(128, (3, 3))(x)
+    decoder_outputs = ReplicationPadding2D(padding=(1, 1))(x)
+
     dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
     print(dec.summary())
     return dec
@@ -233,7 +242,8 @@ def create_sweep(decoder, z, dimension, min=-1.5, max=1.5, step_size=0.01):
 
 # https://www.tensorflow.org/tutorials/load_data/images Partially for normalization
 def load_celeba(folder, batch_size, image_size):
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(folder, image_size=image_size, batch_size=batch_size)
+    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+        folder, image_size=image_size, batch_size=batch_size)
 
     normalization_layer = layers.experimental.preprocessing.Rescaling(1. / 255)
     normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
@@ -275,7 +285,8 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
             if (ctr % 1000 == 0):
                 print(f"{ctr} images processed")
 
-            img = np.array(Image.open(f"{folder}/{filename}").resize(imageSize))
+            img = np.array(Image.open(
+                f"{folder}/{filename}").resize(imageSize))
             img = (img / 255)
             # img = img.reshape(1, 128, 128, 3)
 
@@ -307,22 +318,21 @@ if __name__ == '__main__':
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
 
-    # Reshape size
-    RESIZE_HEIGHT = 64
-    RESIZE_WIDTH = 64
-
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
     latent_dim = 100
 
     BATCH_SIZE = 128
 
     if (RUN_MODE == "train"):
-        encoder, pre_flatten_shape = create_encoder(input_shape=input_shape, latent_dim=latent_dim)
-        decoder = create_decoder(latent_dim=latent_dim, pre_flatten_shape=pre_flatten_shape)
+        encoder, pre_flatten_shape = create_encoder(
+            input_shape=input_shape, latent_dim=latent_dim)
+        decoder = create_decoder(
+            latent_dim=latent_dim, pre_flatten_shape=pre_flatten_shape)
 
         vae = VAE(encoder, decoder)
 
-        data = load_celeba(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
+        data = load_celeba(DATA_PATH, BATCH_SIZE,
+                           (RESIZE_HEIGHT, RESIZE_WIDTH))
 
         # train_VAE(vae, data, epochs=2, batch_size=BATCH_SIZE)
 
