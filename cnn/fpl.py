@@ -1,16 +1,14 @@
-from keras import backend as K
 # TODO These imports will be redundant, if this file is imported, by a file which already uses these import statements
+from typing import List
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-from keras.applications.vgg19 import VGG19
-from keras import Model
+from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras import layers
 from enum import Enum
-# from ..util import layers
 
 
-class Layers(Enum):
+class VGG_ReLu_Layer(Enum):
     """Layers with the first ReLU for feature perceptual loss
 
     Args:
@@ -47,7 +45,7 @@ class FPL():
         # Creating the models
         self.models = self.create_models()
 
-    def create_models(self):
+    def create_models(self) -> List:
         """Creating sub-models of VGG19 for loss computation per layer
 
         Returns:
@@ -94,19 +92,18 @@ class FPL():
             img2 (tensorflow.python.data.ops.dataset_ops.MapDataset): second image
 
         Returns:
-            int: Feature perceptual loss
+            float: Feature perceptual loss
         """
         pixel_loss = []
         fp_losses = []
         # For every model, caculate the feature perceptual loss
         for idx, model in enumerate(self.models):
-            prediciton_1 = model.predict(
-                img1 if idx == 0 else prediciton_1, batch_size=self.batch_size)
-            prediciton_2 = model.predict(
-                img2 if idx == 0 else prediciton_2, batch_size=self.batch_size)
+            prediction_1 = model.predict(
+                img1 if idx == 0 else prediction_1, batch_size=self.batch_size)
+            prediction_2 = model.predict(
+                img2 if idx == 0 else prediction_2, batch_size=self.batch_size)
             mse = tf.keras.losses.MeanSquaredError(reduction='auto')
-            # (= squared euclidean distance)
-            pixel_loss.append(mse(prediciton_1, prediciton_2))
+            pixel_loss.append(mse(prediction_1, prediction_2))
             fp_losses.append(np.sum(pixel_loss[idx]))
 
             # # Extra print statements
@@ -126,7 +123,7 @@ if __name__ == '__main__':
 
     batch_size = 4
     fpl = FPL(batch_size=batch_size, input_shape=(128, 128, 3),
-              loss_layers=[Layers.ONE, Layers.TWO, Layers.THREE], beta=[0.5, 0.5, 0.5])
+              loss_layers=[VGG_ReLu_Layer.ONE, VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE], beta=[0.5, 0.5, 0.5])
 
     # TODO remove, this is for test purposes only.
     def load_celeba(folder, batch_size, image_size):
