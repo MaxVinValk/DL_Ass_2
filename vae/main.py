@@ -8,7 +8,7 @@ from tensorflow import pad
 from tensorflow import keras
 from tensorflow.keras import layers
 from PIL import Image
-
+from cnn.fpl import FPL, VGG_ReLu_Layer
 # Reshape size
 RESIZE_HEIGHT = 128
 RESIZE_WIDTH = 128
@@ -43,10 +43,11 @@ class Sampling(layers.Layer):
 
 
 class VAE(keras.Model):
-    def __init__(self, encoder, decoder, **kwargs):
+    def __init__(self, encoder, decoder, fpl: FPL, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.encoder = encoder
         self.decoder = decoder
+        self.fpl = fpl
         self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = keras.metrics.Mean(
             name="reconstruction_loss")
@@ -69,11 +70,12 @@ class VAE(keras.Model):
                 tf.reduce_sum(keras.losses.binary_crossentropy(
                     data, reconstruction), axis=(1, 2))
             )
-
+            fpl_loss = self.fpl.calculate_fp_loss(data, reconstruction)
             kl_loss = -0.5 * (1 + z_log_var -
                               tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-            total_loss = reconstruction_loss + kl_loss
+            # total_loss = reconstruction_loss + kl_loss
+            total_loss = kl_loss + fpl_loss
 
             grads = tape.gradient(total_loss, self.trainable_weights)
             self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -324,12 +326,18 @@ if __name__ == '__main__':
     BATCH_SIZE = 128
 
     if (RUN_MODE == "train"):
+        fpl = FPL(
+            input_shape=input_shape,
+            batch_size=BATCH_SIZE,
+            loss_layers=[VGG_ReLu_Layer.ONE,
+                         VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE],
+            beta=[1., 1., 1.])
         encoder, pre_flatten_shape = create_encoder(
             input_shape=input_shape, latent_dim=latent_dim)
         decoder = create_decoder(
             latent_dim=latent_dim, pre_flatten_shape=pre_flatten_shape)
 
-        vae = VAE(encoder, decoder)
+        vae = VAE(encoder, decoder, fpl)
 
         data = load_celeba(DATA_PATH, BATCH_SIZE,
                            (RESIZE_HEIGHT, RESIZE_WIDTH))
