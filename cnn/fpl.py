@@ -110,7 +110,7 @@ if __name__ == '__main__':
     """
 
     batch_size = 4
-    fpl = FPL(batch_size=batch_size, input_shape=(128, 128, 3),
+    fpl = FPL(batch_size=batch_size, input_shape=(64, 64, 3),
               loss_layers=[VGG_ReLu_Layer.ONE, VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE], beta=[0.5, 0.5, 0.5])
 
     # TODO remove, this is for test purposes only.
@@ -126,8 +126,8 @@ if __name__ == '__main__':
         return normalized_ds
 
     # Getting test images (created an extra dataset for this; could be changed to default, but will take long)
-    img1 = load_celeba("celeba_one_image/data", batch_size, (128, 128))
-    img2 = load_celeba("celeba_one_image2/data", batch_size, (128, 128))
+    img1 = load_celeba("celeba_one_image/data", batch_size, (64, 64))
+    img2 = load_celeba("celeba_one_image2/data", batch_size, (64, 64))
 
     # Calculate the loss for a single image
     loss = fpl.calculate_fp_loss(img1, img2)

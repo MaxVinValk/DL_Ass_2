@@ -11,8 +11,8 @@ from PIL import Image
 from cnn.fpl import FPL
 from cnn.vgg_relu_layers import *
 # Reshape size
-RESIZE_HEIGHT = 128
-RESIZE_WIDTH = 128
+RESIZE_HEIGHT = 64
+RESIZE_WIDTH = 64
 
 # https://keras.io/examples/generative/vae/
 
@@ -214,7 +214,9 @@ def create_decoder(latent_dim, pre_flatten_shape):
 
     x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
     x = layers.Conv2D(128, (3, 3))(x)
-    decoder_outputs = ReplicationPadding2D(padding=(1, 1))(x)
+    x = ReplicationPadding2D(padding=(1, 1))(x)
+    x = layers.BatchNormalization()(x)
+    decoder_outputs = layers.Conv2D(3, (1,1))(x)
 
     dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
     print(dec.summary())
