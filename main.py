@@ -53,12 +53,14 @@ class VAE(keras.Model):
         self.reconstruction_loss_tracker = keras.metrics.Mean(
             name="reconstruction_loss")
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
+        self.fp_loss_tracker = keras.metrics.Mean(name="fp_loss")
 
     @property
     def metrics(self):
         return [
             self.total_loss_tracker,
             self.reconstruction_loss_tracker,
+            self.fp_loss_tracker,
             self.kl_loss_tracker
         ]
 
@@ -71,22 +73,24 @@ class VAE(keras.Model):
                 tf.reduce_sum(keras.losses.binary_crossentropy(
                     data, reconstruction), axis=(1, 2))
             )
-            fpl_loss = self.fpl.calculate_fp_loss(data, reconstruction)
+            fp_loss = self.fpl.calculate_fp_loss(data, reconstruction)
             kl_loss = -0.5 * (1 + z_log_var -
                               tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
             # total_loss = reconstruction_loss + kl_loss
-            total_loss = kl_loss + fpl_loss
+            total_loss = kl_loss + fp_loss
 
             grads = tape.gradient(total_loss, self.trainable_weights)
             self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
             self.total_loss_tracker.update_state(total_loss)
             self.reconstruction_loss_tracker.update_state(reconstruction_loss)
             self.kl_loss_tracker.update_state(kl_loss)
+            self.fp_loss_tracker.update_state(fp_loss)
 
             return {
                 "loss": self.total_loss_tracker.result(),
                 "reconstruction_loss": self.reconstruction_loss_tracker.result(),
+                "fp_loss": self.fp_loss_tracker.result(),
                 "kl_loss": self.kl_loss_tracker.result()
             }
 
@@ -216,7 +220,7 @@ def create_decoder(latent_dim, pre_flatten_shape):
     x = layers.Conv2D(128, (3, 3))(x)
     x = ReplicationPadding2D(padding=(1, 1))(x)
     x = layers.BatchNormalization()(x)
-    decoder_outputs = layers.Conv2D(3, (1,1))(x)
+    decoder_outputs = layers.Conv2D(3, (1, 1))(x)
 
     dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
     print(dec.summary())
@@ -345,7 +349,7 @@ if __name__ == '__main__':
         data = load_celeba(DATA_PATH, BATCH_SIZE,
                            (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=2, batch_size=BATCH_SIZE)
+        train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE)
 
         # encoder.save("enc/")
         # decoder.save("dec/")

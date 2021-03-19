@@ -9,6 +9,7 @@ from tensorflow.keras import layers
 from cnn.vgg_relu_layers import VGG_ReLu_Layer
 
 
+
 class FPL():
     """Feature Perceptual Loss
        Contains the function calculate_fp_loss
@@ -86,13 +87,14 @@ class FPL():
         fp_losses = []
         # For every model, caculate the feature perceptual loss
         for idx, model in enumerate(self.models):
-            prediction_1 = model.predict(
-                img1 if idx == 0 else prediction_1, batch_size=self.batch_size)
-            prediction_2 = model.predict(
-                img2 if idx == 0 else prediction_2, batch_size=self.batch_size)
+            prediction_1 = model(
+                img1 if idx == 0 else prediction_1)
+            prediction_2 = model(
+                img2 if idx == 0 else prediction_2)
             mse = tf.keras.losses.MeanSquaredError(reduction='auto')
             pixel_loss.append(mse(prediction_1, prediction_2))
-            fp_losses.append(np.sum(pixel_loss[idx]))
+
+            fp_losses.append(tf.reduce_sum(pixel_loss[idx]))
 
             # # Extra print statements
             # print('prediction shape', prediciton_1.shape)
