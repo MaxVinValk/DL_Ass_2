@@ -18,7 +18,7 @@ def load_celeba(folder, image_size):
 
 
 def tensorshape_to_tk(img):
-    imArray = img.numpy().reshape(128, 128, 3)
+    imArray = img.numpy().reshape(64, 64, 3)
     imArray = imArray * 255
 
     imPil = Image.fromarray(imArray.astype(np.uint8))
@@ -91,7 +91,7 @@ def change_z_box(event=None):
 def randomize_z():
     global zScales, copiedZ
 
-    copiedZ = np.random.normal(0, 1, (1, 50))
+    copiedZ = np.random.normal(0, 1, (1, 100))
 
     for i in range(0, len(zScales)):
         zScales[i].set(copiedZ[0][i])
@@ -126,10 +126,10 @@ def apply_transform():
 
 
 if __name__ == "__main__":
-    CELEB_A_PATH = "celeba_vsmall/"
+    CELEB_A_PATH = "celeba_cropped/data/"
     ENC_PATH = "enc"
     DEC_PATH = "dec"
-    AVG_VECTORS_PATH = "latentexplorer/averageVectors"
+    AVG_VECTORS_PATH = "avgDif" # "averageVectors"
 
     for i in range(1, len(sys.argv)):
         if (sys.argv[i] == "--celeba"):
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         elif (sys.argv[i] == "--avgVecs"):
             AVG_VECTORS_PATH = str(sys.argv[i+1])
 
-    NETWORK_IMAGE_INPUT_SIZE = (128, 128)
+    NETWORK_IMAGE_INPUT_SIZE = (64, 64)
 
     print("Loading in celeba data")
 
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     lastCol = 0
     lastRow = 0
 
-    for i in range(0, 50):
+    for i in range(0, 100):
         lbl = tk.Label(root2, text=f"dim: {i}")
         lbl.grid(column=int(i / 15) * 2, row=i % 15)
 
@@ -194,6 +194,8 @@ if __name__ == "__main__":
         scale.grid(column=int(i / 15) * 2 + 1, row=i % 15)
 
         zScales.append(scale)
+
+    placement = 103
 
     resetBtn = tk.Button(root2, text="Reset Z", width=10, command=reset_z)
     randomBtn = tk.Button(root2, text="Randomize", width=10, command=randomize_z)
@@ -206,12 +208,17 @@ if __name__ == "__main__":
 
     vectorBtn = tk.Button(root2, text="Apply transform", width=10, command=apply_transform)
 
-    resetBtn.grid(column=int(53 / 15) * 2 + 1, row=53 % 15)
-    randomBtn.grid(column=int(54 / 15) * 2 + 1, row=54 % 15)
+    resetBtn.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
+    placement += 1
+    randomBtn.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
+    placement += 1
 
-    vectorCombo.grid(column=int(57 / 15) * 2 + 1, row=57 % 15)
-    vectorMode.grid(column=int(58 / 15) * 2 + 1, row=58 % 15)
-    vectorBtn.grid(column=int(59 / 15) * 2 + 1, row=59 % 15)
+    vectorCombo.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
+    placement+=1
+    vectorMode.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
+    placement+=1
+    vectorBtn.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
+    placement+=1
 
     load_next_face()
 
