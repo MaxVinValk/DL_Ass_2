@@ -1,5 +1,6 @@
 import sys
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -10,9 +11,6 @@ from tensorflow.keras import layers
 from PIL import Image
 from cnn.fpl import FPL
 from cnn.vgg_relu_layers import *
-# Reshape size
-RESIZE_HEIGHT = 64
-RESIZE_WIDTH = 64
 
 # https://keras.io/examples/generative/vae/
 
@@ -55,6 +53,7 @@ class VAE(keras.Model):
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
         self.fp_loss_tracker = keras.metrics.Mean(name="fp_loss")
 
+
     @property
     def metrics(self):
         return [
@@ -74,10 +73,12 @@ class VAE(keras.Model):
                     data, reconstruction), axis=(1, 2))
             )
             fp_loss = self.fpl.calculate_fp_loss(data, reconstruction)
+
             kl_loss = -0.5 * (1 + z_log_var -
                               tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
             # total_loss = reconstruction_loss + kl_loss
+
             total_loss = kl_loss + fp_loss
 
             grads = tape.gradient(total_loss, self.trainable_weights)
@@ -148,8 +149,21 @@ def get_MNIST():
     return mnist_digits
 
 
-def train_VAE(vae, data, epochs, batch_size):
-    vae.compile(optimizer=keras.optimizers.Adam())
+def train_VAE(vae, data, epochs, batch_size, num_datapoints):
+
+    batches_per_epoch = int(np.ceil(num_datapoints / batch_size))
+
+    # The optimizer calls the schedule once per train_step = 1 batch,
+    # we only want to change the learning rate after a batch, and we want the
+    # learning rate to remain the same in between these adjustments
+    learning_rate_schedule = keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate=0.0005,
+        decay_steps = batches_per_epoch,
+        decay_rate = 0.5,
+        staircase=True
+    )
+
+    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate_schedule))
     vae.fit(data, epochs=epochs, batch_size=batch_size)
 
 
@@ -254,20 +268,27 @@ def load_celeba(folder, batch_size, image_size):
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
         folder, image_size=image_size, batch_size=batch_size)
 
+    num_files = 0
+
+    for sub in os.listdir(folder):
+        if os.path.isdir(f"{folder}/{sub}"):
+            num_files += len(os.listdir(f"{folder}/{sub}"))
+
+
     normalization_layer = layers.experimental.preprocessing.Rescaling(1. / 255)
     normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
 
-    return normalized_ds
+    return normalized_ds, num_files
 
 
 '''
     folder: The folder containing the images. Note that the other functions usually take the folder that
             contains the folder which has the images
-            
+
     featureFile: The CSV file which lists which features are present in which images
-    
+
     imageSize: The size of the image that we accept. A 2D tuple
-    
+
     enc: The loaded encoder
 '''
 
@@ -318,6 +339,8 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
 
 if __name__ == '__main__':
 
+    # Checking:
+
     # General setup for all other modes
 
     DATA_PATH = "celeba_vsmall/data"
@@ -327,10 +350,15 @@ if __name__ == '__main__':
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
 
+
+    RESIZE_HEIGHT = 64
+    RESIZE_WIDTH = 64
+
+    BATCH_SIZE = 64
+
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
     latent_dim = 100
 
-    BATCH_SIZE = 128
 
     if (RUN_MODE == "train"):
         fpl = FPL(
@@ -338,7 +366,7 @@ if __name__ == '__main__':
             batch_size=BATCH_SIZE,
             loss_layers=[VGG_ReLu_Layer.ONE,
                          VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE],
-            beta=[1., 1., 1.])
+            beta=[.5, .5, .5])
         encoder, pre_flatten_shape = create_encoder(
             input_shape=input_shape, latent_dim=latent_dim)
         decoder = create_decoder(
@@ -346,10 +374,12 @@ if __name__ == '__main__':
 
         vae = VAE(encoder, decoder, fpl)
 
-        data = load_celeba(DATA_PATH, BATCH_SIZE,
+
+
+        data, num_files = load_celeba(DATA_PATH, BATCH_SIZE,
                            (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE)
+        train_VAE(vae, data, epochs=5, batch_size=BATCH_SIZE, num_datapoints = num_files)
 
-        # encoder.save("enc/")
-        # decoder.save("dec/")
+        encoder.save("enc/")
+        decoder.save("dec/")
