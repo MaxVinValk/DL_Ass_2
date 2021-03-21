@@ -380,7 +380,7 @@ if __name__ == '__main__':
         data, num_files = load_celeba(DATA_PATH, BATCH_SIZE,
                                       (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=30, batch_size=BATCH_SIZE,
+        train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE,
                   num_datapoints=num_files)
 
         encoder.save("enc/")
