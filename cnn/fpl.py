@@ -102,9 +102,9 @@ class FPL():
             tf.reduce_sum(tf.square(l2_real - l2_gen), [1, 2, 3])
         l3_loss = self.beta[2] * \
             tf.reduce_sum(tf.square(l3_real - l3_gen), [1, 2, 3])
-        # total_loss = tf.add_n([l1_loss, l2_loss, l3_loss])
+        total_loss = tf.add_n([l1_loss, l2_loss, l3_loss])
 
-        total_loss = tf.reduce_mean(l1_loss + l2_loss + l3_loss)
+        # total_loss = tf.reduce_mean(l1_loss + l2_loss + l3_loss)
         return total_loss
         # total_loss = l1_loss + l2_loss + l3_loss
 

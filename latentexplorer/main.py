@@ -8,8 +8,10 @@ from PIL import Image, ImageTk
 import sys
 import pickle
 
+
 def load_celeba(folder, image_size):
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(folder, image_size=image_size, batch_size=1)
+    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+        folder, image_size=image_size, batch_size=1)
 
     normalization_layer = layers.experimental.preprocessing.Rescaling(1. / 255)
     normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
@@ -113,6 +115,7 @@ def load_average_vectors(filename):
     with open(filename, "rb") as f:
         return pickle.load(f)
 
+
 def apply_transform():
     global vectorCombo, vectorMode, avgVecs, copiedZ
 
@@ -126,10 +129,10 @@ def apply_transform():
 
 
 if __name__ == "__main__":
-    CELEB_A_PATH = "celeba_cropped/data/"
-    ENC_PATH = "enc"
-    DEC_PATH = "dec"
-    AVG_VECTORS_PATH = "avgDif" # "averageVectors"
+    CELEB_A_PATH = "img_align_celeba"
+    ENC_PATH = "latentexplorer/enc"
+    DEC_PATH = "latentexplorer/dec"
+    AVG_VECTORS_PATH = "latentexplorer/avgDif"  # "averageVectors"
 
     for i in range(1, len(sys.argv)):
         if (sys.argv[i] == "--celeba"):
@@ -190,7 +193,8 @@ if __name__ == "__main__":
         lbl = tk.Label(root2, text=f"dim: {i}")
         lbl.grid(column=int(i / 15) * 2, row=i % 15)
 
-        scale = tk.Scale(root2, orient=tk.HORIZONTAL, resolution=0.01, from_=-5, to=5, command=change_z_box)
+        scale = tk.Scale(root2, orient=tk.HORIZONTAL,
+                         resolution=0.01, from_=-5, to=5, command=change_z_box)
         scale.grid(column=int(i / 15) * 2 + 1, row=i % 15)
 
         zScales.append(scale)
@@ -198,15 +202,18 @@ if __name__ == "__main__":
     placement = 103
 
     resetBtn = tk.Button(root2, text="Reset Z", width=10, command=reset_z)
-    randomBtn = tk.Button(root2, text="Randomize", width=10, command=randomize_z)
+    randomBtn = tk.Button(root2, text="Randomize",
+                          width=10, command=randomize_z)
 
     vectorCombo = ttk.Combobox(root2, values=avgVecNames, state="readonly")
     vectorCombo.current(0)
 
-    vectorMode = ttk.Combobox(root2, values=["add", "subtract"], state="readonly")
+    vectorMode = ttk.Combobox(
+        root2, values=["add", "subtract"], state="readonly")
     vectorMode.current(0)
 
-    vectorBtn = tk.Button(root2, text="Apply transform", width=10, command=apply_transform)
+    vectorBtn = tk.Button(root2, text="Apply transform",
+                          width=10, command=apply_transform)
 
     resetBtn.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
     placement += 1
@@ -214,11 +221,11 @@ if __name__ == "__main__":
     placement += 1
 
     vectorCombo.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
-    placement+=1
+    placement += 1
     vectorMode.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
-    placement+=1
+    placement += 1
     vectorBtn.grid(column=int(placement / 15) * 2 + 1, row=placement % 15)
-    placement+=1
+    placement += 1
 
     load_next_face()
 
