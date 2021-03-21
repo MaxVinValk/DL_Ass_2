@@ -169,7 +169,7 @@ def train_VAE(vae, data, epochs, batch_size, num_datapoints):
     )
 
     vae.compile(optimizer=keras.optimizers.Adam(
-        learning_rate=learning_rate_schedule))
+        learning_rate=0.0005))
     vae.fit(data, epochs=epochs, batch_size=batch_size)
 
 
@@ -380,7 +380,7 @@ if __name__ == '__main__':
         data, num_files = load_celeba(DATA_PATH, BATCH_SIZE,
                                       (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=5, batch_size=BATCH_SIZE,
+        train_VAE(vae, data, epochs=30, batch_size=BATCH_SIZE,
                   num_datapoints=num_files)
 
         encoder.save("enc/")
