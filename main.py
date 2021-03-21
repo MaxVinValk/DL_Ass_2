@@ -53,7 +53,6 @@ class VAE(keras.Model):
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
         self.fp_loss_tracker = keras.metrics.Mean(name="fp_loss")
 
-
     @property
     def metrics(self):
         return [
@@ -77,9 +76,15 @@ class VAE(keras.Model):
             kl_loss = -0.5 * (1 + z_log_var -
                               tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
+            total_loss = tf.add(kl_loss, fp_loss)
             # total_loss = reconstruction_loss + kl_loss
+            # print('\n\nFP Loss')
+            # print(fp_loss, fp_loss.numpy())
+            # print('\n\nKL LOSS')
+            # print(kl_loss, kl_loss.numpy())
 
-            total_loss = kl_loss + fp_loss
+            # print(total_loss, total_loss.numpy())
+            # exit()
 
             grads = tape.gradient(total_loss, self.trainable_weights)
             self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -158,12 +163,13 @@ def train_VAE(vae, data, epochs, batch_size, num_datapoints):
     # learning rate to remain the same in between these adjustments
     learning_rate_schedule = keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=0.0005,
-        decay_steps = batches_per_epoch,
-        decay_rate = 0.5,
+        decay_steps=batches_per_epoch,
+        decay_rate=0.5,
         staircase=True
     )
 
-    vae.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate_schedule))
+    vae.compile(optimizer=keras.optimizers.Adam(
+        learning_rate=learning_rate_schedule))
     vae.fit(data, epochs=epochs, batch_size=batch_size)
 
 
@@ -199,7 +205,7 @@ def create_encoder(input_shape, latent_dim):
     z = Sampling()([z_mean, z_log_var])
 
     enc = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
-    print(enc.summary())
+    # print(enc.summary())
     return enc, pre_flatten_shape
 
 
@@ -237,7 +243,7 @@ def create_decoder(latent_dim, pre_flatten_shape):
     decoder_outputs = layers.Conv2D(3, (1, 1))(x)
 
     dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
-    print(dec.summary())
+    # print(dec.summary())
     return dec
 
 
@@ -273,7 +279,6 @@ def load_celeba(folder, batch_size, image_size):
     for sub in os.listdir(folder):
         if os.path.isdir(f"{folder}/{sub}"):
             num_files += len(os.listdir(f"{folder}/{sub}"))
-
 
     normalization_layer = layers.experimental.preprocessing.Rescaling(1. / 255)
     normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
@@ -350,7 +355,6 @@ if __name__ == '__main__':
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
 
-
     RESIZE_HEIGHT = 64
     RESIZE_WIDTH = 64
 
@@ -358,7 +362,6 @@ if __name__ == '__main__':
 
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
     latent_dim = 100
-
 
     if (RUN_MODE == "train"):
         fpl = FPL(
@@ -374,12 +377,11 @@ if __name__ == '__main__':
 
         vae = VAE(encoder, decoder, fpl)
 
-
-
         data, num_files = load_celeba(DATA_PATH, BATCH_SIZE,
-                           (RESIZE_HEIGHT, RESIZE_WIDTH))
+                                      (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=5, batch_size=BATCH_SIZE, num_datapoints = num_files)
+        train_VAE(vae, data, epochs=5, batch_size=BATCH_SIZE,
+                  num_datapoints=num_files)
 
         encoder.save("enc/")
         decoder.save("dec/")

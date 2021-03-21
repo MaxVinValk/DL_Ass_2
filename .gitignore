@@ -133,4 +133,5 @@ celeba/
 celeba_vsmall/
 dec/
 enc/
+img_align_celeba/
 
