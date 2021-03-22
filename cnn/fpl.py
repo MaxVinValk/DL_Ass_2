@@ -97,9 +97,9 @@ class FPL():
             fp_losses.append(tf.reduce_sum(pixel_loss[idx]))
 
             # Extra print statements
-            print('prediction shape', prediction_1.shape)
-            print('pixel loss', pixel_loss[idx])
-            print('pixel loss shape', pixel_loss[idx].shape)
+            # print('prediction shape', prediction_1.shape)
+            # print('pixel loss', pixel_loss[idx])
+            # print('pixel loss shape', pixel_loss[idx].shape)
             # print('shape :', prediction_1.shape)
         # Computing total loss by element wise multiplication of pf_losses and beta
         total_loss = sum([f*b for f,
