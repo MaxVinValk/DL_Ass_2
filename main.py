@@ -355,7 +355,8 @@ if __name__ == '__main__':
     DATA_PATH = "celeba_vsmall/data"
     RUN_MODE = "train"
 
-    LOG_DIR = "logs_\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    LOG_DIR = "logs_\\fit\\" + TIME_STAMP
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
@@ -389,5 +390,6 @@ if __name__ == '__main__':
         train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE,
                   num_datapoints=num_files, log_dir = LOG_DIR)
 
-        encoder.save("enc/")
-        decoder.save("dec/")
+        os.mkdir(f"nets_{TIME_STAMP}")
+        encoder.save(f"nets_{TIME_STAMP}/enc/")
+        decoder.save(f"nets_{TIME_STAMP}/dec/")
