@@ -1,6 +1,7 @@
 import sys
 import os
 import pickle
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -154,7 +155,7 @@ def get_MNIST():
     return mnist_digits
 
 
-def train_VAE(vae, data, epochs, batch_size, num_datapoints):
+def train_VAE(vae, data, epochs, batch_size, num_datapoints, log_dir):
 
     batches_per_epoch = int(np.ceil(num_datapoints / batch_size))
 
@@ -168,9 +169,12 @@ def train_VAE(vae, data, epochs, batch_size, num_datapoints):
         staircase=True
     )
 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir = log_dir, histogram_freq = 1)
+
     vae.compile(optimizer=keras.optimizers.Adam(
         learning_rate=0.0005))
-    vae.fit(data, epochs=epochs, batch_size=batch_size)
+
+    vae.fit(data, epochs=epochs, batch_size=batch_size, callbacks = [tensorboard_callback])
 
 
 def create_encoder(input_shape, latent_dim):
@@ -351,6 +355,8 @@ if __name__ == '__main__':
     DATA_PATH = "celeba_vsmall/data"
     RUN_MODE = "train"
 
+    LOG_DIR = "logs_\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
@@ -381,7 +387,7 @@ if __name__ == '__main__':
                                       (RESIZE_HEIGHT, RESIZE_WIDTH))
 
         train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE,
-                  num_datapoints=num_files)
+                  num_datapoints=num_files, log_dir = LOG_DIR)
 
         encoder.save("enc/")
         decoder.save("dec/")
