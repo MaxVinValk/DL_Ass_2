@@ -169,12 +169,14 @@ def train_VAE(vae, data, epochs, batch_size, num_datapoints, log_dir):
         staircase=True
     )
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir = log_dir, histogram_freq = 1)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=log_dir, histogram_freq=1)
 
     vae.compile(optimizer=keras.optimizers.Adam(
         learning_rate=0.0005))
 
-    vae.fit(data, epochs=epochs, batch_size=batch_size, callbacks = [tensorboard_callback])
+    vae.fit(data, epochs=epochs, batch_size=batch_size,
+            callbacks=[tensorboard_callback])
 
 
 def create_encoder(input_shape, latent_dim):
@@ -352,7 +354,7 @@ if __name__ == '__main__':
 
     # General setup for all other modes
 
-    DATA_PATH = "celeba_vsmall/data"
+    DATA_PATH = "celeba/data"
     RUN_MODE = "train"
 
     TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -390,8 +392,8 @@ if __name__ == '__main__':
         data, num_files = load_celeba(DATA_PATH, BATCH_SIZE,
                                       (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-        train_VAE(vae, data, epochs=10, batch_size=BATCH_SIZE,
-                  num_datapoints=num_files, log_dir = LOG_DIR)
+        train_VAE(vae, data, epochs=30, batch_size=BATCH_SIZE,
+                  num_datapoints=num_files, log_dir=LOG_DIR)
 
         encoder.save(f"{EXP_DIR}/enc/")
         decoder.save(f"{EXP_DIR}/dec/")
