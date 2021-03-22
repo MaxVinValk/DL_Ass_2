@@ -9,6 +9,7 @@ from tensorflow.keras import layers
 from cnn.vgg_relu_layers import VGG_ReLu_Layer
 
 
+
 class FPL():
     """Feature Perceptual Loss
        Contains the function calculate_fp_loss
@@ -69,10 +70,6 @@ class FPL():
             # model.summary()
 
             models.append(model)
-
-        self.l1 = models[0]
-        self.l2 = models[1]
-        self.l3 = models[2]
         return models
 
     def calculate_fp_loss(self, img1, img2):
@@ -88,42 +85,22 @@ class FPL():
         """
         pixel_loss = []
         fp_losses = []
-
-        l1_real = self.l1(img1)
-        l1_gen = self.l1(img2)
-        l2_real = self.l2(l1_real)
-        l2_gen = self.l2(l1_gen)
-        l3_real = self.l3(l2_real)
-        l3_gen = self.l3(l2_gen)
-
-        l1_loss = self.beta[0] * \
-            tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3])
-        l2_loss = self.beta[1] * \
-            tf.reduce_sum(tf.square(l2_real - l2_gen), [1, 2, 3])
-        l3_loss = self.beta[2] * \
-            tf.reduce_sum(tf.square(l3_real - l3_gen), [1, 2, 3])
-        # total_loss = tf.add_n([l1_loss, l2_loss, l3_loss])
-
-        total_loss = tf.reduce_mean(l1_loss + l2_loss + l3_loss)
-        return total_loss
-        # total_loss = l1_loss + l2_loss + l3_loss
-
+        prediction_1 = img1
+        prediction_2 = img2
         # For every model, caculate the feature perceptual loss
         for idx, model in enumerate(self.models):
-            prediction_1 = model(
-                img1 if idx == 0 else prediction_1)
-            prediction_2 = model(
-                img2 if idx == 0 else prediction_2)
+            prediction_1 = model(prediction_1)
+            prediction_2 = model(prediction_2)
             mse = tf.keras.losses.MeanSquaredError(reduction='auto')
             pixel_loss.append(mse(prediction_1, prediction_2))
 
             fp_losses.append(tf.reduce_sum(pixel_loss[idx]))
 
-            # # Extra print statements
-            # print('prediction shape', prediciton_1.shape)
-            # print('pixel loss', pixel_loss[idx])
-            # print('pixel loss shape', pixel_loss[idx].shape)
-            # print('shape :', prediciton_1.shape)
+            # Extra print statements
+            print('prediction shape', prediction_1.shape)
+            print('pixel loss', pixel_loss[idx])
+            print('pixel loss shape', pixel_loss[idx].shape)
+            # print('shape :', prediction_1.shape)
         # Computing total loss by element wise multiplication of pf_losses and beta
         total_loss = sum([f*b for f,
                           b in zip(fp_losses, self.beta)])
