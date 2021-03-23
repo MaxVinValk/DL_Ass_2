@@ -1,11 +1,11 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class VGG_ReLu_Layer(Enum):
+class VGG_ReLu_Layer(IntEnum):
     """Layers with the first ReLU for feature perceptual loss
 
     Args:
-        Enum (int): Number, indicateing the block
+        Enum (int): Number, indicating the block
     """
     ONE = 1
     TWO = 4
