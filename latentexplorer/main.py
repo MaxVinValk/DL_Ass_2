@@ -8,6 +8,33 @@ from PIL import Image, ImageTk
 import sys
 import pickle
 
+# TODO: Refactor and give a nice place somewhere
+'''
+TODO: Move to latent explorer
+
+def create_image_from_z(decoder, z):
+    rec = decoder(z)
+    rec = rec.numpy().reshape(128, 128, 3)
+
+    rec *= 255
+    rec = rec.astype(np.uint8)
+
+    return Image.fromarray(rec)
+
+
+def create_sweep(decoder, z, dimension, min=-1.5, max=1.5, step_size=0.01):
+    results = []
+
+    for i in np.arange(min, max, step_size):
+        zprime = z.copy()
+        zprime[0][dimension] = i
+
+        results.append(create_image_from_z(decoder, zprime))
+
+    return results
+'''
+
+
 def load_celeba(folder, image_size):
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(folder, image_size=image_size, batch_size=1)
 

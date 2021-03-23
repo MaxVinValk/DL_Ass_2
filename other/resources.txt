@@ -1,0 +1,13 @@
+https://keras.io/examples/generative/vae/
+
+CELEBA loading:
+https://fairyonice.github.io/My-first-GAN-using-CelebA-data.html
+
+Partially for normalisation
+https://www.tensorflow.org/tutorials/load_data/images 
+
+https://towardsdatascience.com/variational-autoencoders-vaes-for-dummies-step-by-step-tutorial-69e6d1c9d8e9
+https://towardsdatascience.com/generating-new-faces-with-variational-autoencoders-d13cfcb5f0a8
+
+Replication padding:
+https://www.machinecurve.com/index.php/2020/02/10/using-constant-padding-reflection-padding-and-replication-padding-with-keras/#replication-padding
