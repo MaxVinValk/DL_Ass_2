@@ -55,12 +55,12 @@ if __name__ == '__main__':
         staircase=True
     )
 
-    #vae = VAE(architecture)
+    vae = VAE(architecture)
 
-    #vae.train(data=data, epochs=EPOCHS, custom_loss=loss_function, learning_rate=learning_rate_schedule,
-    #          log_dir=LOG_DIR)
+    vae.train(data=data, epochs=EPOCHS, custom_loss=loss_function, learning_rate=learning_rate_schedule,
+              log_dir=LOG_DIR)
 
-    #vae.save(EXP_DIR)
+    vae.save(EXP_DIR)
 
     with open(f"{EXP_DIR}/info.txt", "w") as f:
         f.write("GENERAL:\n\n" + f"Epochs: {EPOCHS}\n\n")
