@@ -1,14 +1,17 @@
-import tensorflow as tf
-from tensorflow import keras
-
 from custom_loss.custom_loss_functions import CustomLoss
 from vae.vae_architectures import VAEArchitecture
+
+from custom_loss.custom_loss_calculators import *
 
 
 class VAE(keras.Model):
     def __init__(self, architecture: VAEArchitecture, **kwargs):
         super(VAE, self).__init__(**kwargs)
+
         self.architecture = architecture
+        self.encoder = architecture.get_encoder()
+        self.decoder = architecture.get_decoder()
+
         self.cl = None
 
     @property
@@ -17,7 +20,6 @@ class VAE(keras.Model):
 
     def train_step(self, data):
         with tf.GradientTape() as tape:
-
             loss = self.cl.calculate_loss(data, self.architecture)
 
             grads = tape.gradient(loss, self.trainable_weights)

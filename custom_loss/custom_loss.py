@@ -23,8 +23,11 @@ class CustomLoss:
 
     def calculate_loss(self, original, architecture: VAEArchitecture):
 
-        z_mean, z_log_var, z = (architecture.get_encoder()(original))
-        reconstructed = (architecture.get_decoder())(z)
+        enc = architecture.get_encoder()
+        dec = architecture.get_decoder()
+
+        z_mean, z_log_var, z = enc(original)
+        reconstructed = dec(z)
 
         total = tf.constant(0.0)
 
