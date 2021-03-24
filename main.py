@@ -21,9 +21,13 @@ if __name__ == '__main__':
 
     LOG_DIR = f"{EXP_DIR}/logs"
 
+    EPOCHS = 5
+
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
             DATA_PATH = str(sys.argv[i + 1])
+        if sys.argv[i] == "--epochs":
+            EPOCHS = int(sys.argv[i + 1])
 
     RESIZE_HEIGHT = 64
     RESIZE_WIDTH = 64
@@ -51,14 +55,15 @@ if __name__ == '__main__':
         staircase=True
     )
 
-    vae = VAE(architecture)
+    #vae = VAE(architecture)
 
-    vae.train(data=data, epochs=10, custom_loss=loss_function, learning_rate=learning_rate_schedule,
-              log_dir=LOG_DIR)
+    #vae.train(data=data, epochs=EPOCHS, custom_loss=loss_function, learning_rate=learning_rate_schedule,
+    #          log_dir=LOG_DIR)
 
-    vae.save(EXP_DIR)
+    #vae.save(EXP_DIR)
 
     with open(f"{EXP_DIR}/info.txt", "w") as f:
+        f.write("GENERAL:\n\n" + f"Epochs: {EPOCHS}\n\n")
         f.write("DATA:\n\n" + str(data) + "\n\n")
         f.write("ARCHITECTURE:\n\n" + str(architecture) + "\n\n")
         f.write("LOSS FUNCTION:\n\n" + str(loss_function))
