@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     vae = VAE(architecture)
 
-    vae.train(data=celeba_data, epochs=1, custom_loss=loss_function, learning_rate=learning_rate_schedule,
+    vae.train(data=celeba_data, epochs=10, custom_loss=loss_function, learning_rate=learning_rate_schedule,
               log_dir=LOG_DIR)
 
     vae.save(EXP_DIR)
