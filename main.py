@@ -12,13 +12,6 @@ from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
 
 if __name__ == '__main__':
 
-    # arch = PaperArchitecture((64, 64, 3), 100)
-    # print(arch.encoder.summary())
-    # print('\n\n', arch.decoder.summary())
-    # vae = VAE(arch)
-    # vae.save()
-    # exit()
-
     DATA_PATH = "img_align_celeba/"
 
     TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")

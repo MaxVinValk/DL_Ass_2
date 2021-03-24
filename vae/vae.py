@@ -6,7 +6,7 @@ from vae.vae_architectures import VAEArchitecture
 
 
 class VAE(keras.Model):
-    def __init__(self, architecture : VAEArchitecture, **kwargs):
+    def __init__(self, architecture: VAEArchitecture, **kwargs):
         super(VAE, self).__init__(**kwargs)
         self.architecture = architecture
         self.cl = None
@@ -34,8 +34,8 @@ class VAE(keras.Model):
         self.compile(optimizer=keras.optimizers.Adam(
             learning_rate=learning_rate))
 
-        self.fit(data.get_dataset(), epochs=epochs, batch_size=data.get_batch_size(), callbacks=[tensorboard_callback])
+        self.fit(data.get_dataset(), epochs=epochs,
+                 batch_size=data.get_batch_size(), callbacks=[tensorboard_callback])
 
     def save(self, folder):
         self.architecture.save(folder)
-

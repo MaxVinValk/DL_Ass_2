@@ -78,31 +78,27 @@ class PaperArchitecture(VAEArchitecture):
         x = layers.Reshape(pre_flatten_shape)(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.Conv2D(128, (3, 3))(x)
         x = layers.BatchNormalization()(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.Conv2D(64, (3, 3))(x)
         x = layers.BatchNormalization()(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.Conv2D(32, (3, 3))(x)
         x = layers.BatchNormalization()(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
-        # x = layers.Conv2D(128, (3, 3))(x)
-        x = layers.Conv2D(3, (3, 3))(x)
-        x = layers.BatchNormalization()(x)
         x = ReplicationPadding2D(padding=(1, 1))(x)
-        # decoder_outputs = layers.Conv2D(3, (1, 1))(x)
+        decoder_outputs = layers.Conv2D(3, (3, 3))(x)
 
-        decoder_outputs = x
         dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
         return dec
 
