@@ -3,10 +3,13 @@ from tensorflow.keras import metrics
 
 from vae.vae_architectures import VAEArchitecture
 
+
 class CustomLoss:
     def __init__(self, losses=None):
         self.loss_calculators = {}
         self.loss_trackers = {"total_loss": metrics.Mean(name="total_loss")}
+
+        self.cached_metrics = None
 
         if losses is not None:
             for loss_name, loss_calculator in losses.items():
@@ -16,6 +19,7 @@ class CustomLoss:
         if loss_name not in self.loss_calculators.keys():
             self.loss_calculators[loss_name] = loss_calculator
             self.loss_trackers[loss_name] = metrics.Mean(name=loss_name)
+            self.cached_metrics = None
 
     def calculate_loss(self, original, architecture: VAEArchitecture):
 
@@ -38,10 +42,11 @@ class CustomLoss:
 
     def get_metrics(self):
 
-        # Sorted ensures order is the same
-        metric_names = sorted(list(self.loss_trackers.keys()))
+        if self.cached_metrics is None:
+            metric_names = sorted(list(self.loss_trackers.keys()))
+            self.cached_metrics = [self.loss_trackers[tracker_name] for tracker_name in metric_names]
 
-        return [self.loss_trackers[tracker_name] for tracker_name in metric_names]
+        return self.cached_metrics
 
     def get_loss_trackers(self):
         results = {}
