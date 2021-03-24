@@ -1,10 +1,12 @@
+from abc import ABC, abstractmethod
+
 import tensorflow as tf
 from tensorflow.keras import metrics
 
 from vae.vae_architectures import VAEArchitecture
 
 
-class CustomLoss:
+class CustomLoss(ABC):
     def __init__(self, losses=None):
         self.loss_calculators = {}
         self.loss_trackers = {"total_loss": metrics.Mean(name="total_loss")}
@@ -59,6 +61,8 @@ class CustomLoss:
 
         return results
 
-
+    @abstractmethod
+    def __str__(self):
+        return "Default custom loss: Add a __str__ to your own loss function!"
 
 

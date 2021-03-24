@@ -4,11 +4,12 @@ import datetime
 
 from tensorflow import keras
 
-from custom_loss.custom_loss_functions import PaperLoss123, Loss123, ReconLoss
+from custom_loss.custom_loss_functions import PaperLoss123, PaperLoss, ReconLoss
 
 from data.dataset_loader import CelebA
 from vae.vae import VAE
 from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
+
 
 if __name__ == '__main__':
 
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     input_shape = (RESIZE_HEIGHT, RESIZE_WIDTH, 3)
     latent_dim = 100
 
-    celeba_data = CelebA(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
+    data = CelebA(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
 
     # PaperArchitecture(input_shape, latent_dim)
     architecture = PaperArchitecture(input_shape, latent_dim)
@@ -45,14 +46,21 @@ if __name__ == '__main__':
     # learning rate to remain the same in between these adjustments
     learning_rate_schedule = keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=0.0005,
-        decay_steps=celeba_data.get_batches_per_epoch(),
+        decay_steps=data.get_batches_per_epoch(),
         decay_rate=0.5,
         staircase=True
     )
 
     vae = VAE(architecture)
 
-    vae.train(data=celeba_data, epochs=10, custom_loss=loss_function, learning_rate=learning_rate_schedule,
+    vae.train(data=data, epochs=10, custom_loss=loss_function, learning_rate=learning_rate_schedule,
               log_dir=LOG_DIR)
 
     vae.save(EXP_DIR)
+
+    with open(f"{EXP_DIR}/info.txt", "w") as f:
+        f.write("DATA:\n\n" + str(data) + "\n\n")
+        f.write("ARCHITECTURE:\n\n" + str(architecture) + "\n\n")
+        f.write("LOSS FUNCTION:\n\n" + str(loss_function))
+
+

@@ -28,6 +28,10 @@ class Data(ABC):
     def get_batches_per_epoch(self):
         pass
 
+    @abstractmethod
+    def __str__(self):
+        return "Default data __str__. Change this!"
+
 
 class CelebA(Data):
     def __init__(self, folder, batch_size, image_size):
@@ -57,3 +61,8 @@ class CelebA(Data):
 
     def get_batches_per_epoch(self):
         return int(np.ceil(self.num_files / self.batch_size))
+
+    def __str__(self):
+        return "CelebA dataset with:\n" + \
+                f"Num files: {self.num_files}\n" + \
+                f"Batch_size: {self.batch_size}\n"

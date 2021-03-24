@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -28,6 +28,10 @@ class VAEArchitecture(ABC):
         except Exception as e:
             print("Failed to save VAE architecture")
             print(e)
+
+    @abstractmethod
+    def __str__(self):
+        return "Default architecture - Specify your own string override!"
 
 
 class PaperArchitecture(VAEArchitecture):
@@ -102,6 +106,10 @@ class PaperArchitecture(VAEArchitecture):
         dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
         return dec
 
+    def __str__(self):
+        return "Paper architecture\n"
+
+
 
 class TutorialArchitecture(VAEArchitecture):
 
@@ -160,3 +168,6 @@ class TutorialArchitecture(VAEArchitecture):
         dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
 
         return dec
+
+    def __str__(self):
+        return "Tutorial architecture\n"
