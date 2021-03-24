@@ -33,7 +33,8 @@ class VAEArchitecture(ABC):
 class PaperArchitecture(VAEArchitecture):
 
     def __init__(self, input_shape, latent_dim):
-        self.encoder, pre_flatten_shape = self.__create_encoder(input_shape, latent_dim)
+        self.encoder, pre_flatten_shape = self.__create_encoder(
+            input_shape, latent_dim)
         self.decoder = self.__create_decoder(latent_dim, pre_flatten_shape)
 
     def __create_encoder(self, input_shape, latent_dim):
@@ -66,7 +67,8 @@ class PaperArchitecture(VAEArchitecture):
 
         z = Sampling()([z_mean, z_log_var])
 
-        enc = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+        enc = keras.Model(
+            encoder_inputs, [z_mean, z_log_var, z], name="encoder")
         return enc, pre_flatten_shape
 
     def __create_decoder(self, latent_dim, pre_flatten_shape):
@@ -77,30 +79,33 @@ class PaperArchitecture(VAEArchitecture):
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
         x = layers.Conv2D(128, (3, 3))(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.BatchNormalization()(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
         x = layers.Conv2D(64, (3, 3))(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.BatchNormalization()(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
         x = layers.Conv2D(32, (3, 3))(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.BatchNormalization()(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
         x = layers.LeakyReLU()(x)
 
         x = layers.UpSampling2D(size=(2, 2), interpolation='nearest')(x)
-        x = layers.Conv2D(128, (3, 3))(x)
-        x = ReplicationPadding2D(padding=(1, 1))(x)
+        # x = layers.Conv2D(128, (3, 3))(x)
+        x = layers.Conv2D(3, (3, 3))(x)
         x = layers.BatchNormalization()(x)
-        decoder_outputs = layers.Conv2D(3, (1, 1))(x)
+        x = ReplicationPadding2D(padding=(1, 1))(x)
+        # decoder_outputs = layers.Conv2D(3, (1, 1))(x)
 
+        decoder_outputs = x
         dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
         return dec
+
 
 class TutorialArchitecture(VAEArchitecture):
 
@@ -131,7 +136,8 @@ class TutorialArchitecture(VAEArchitecture):
 
         z = Sampling()([z_mean, z_log_var])
 
-        enc = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+        enc = keras.Model(
+            encoder_inputs, [z_mean, z_log_var, z], name="encoder")
 
         return enc
 
@@ -158,4 +164,3 @@ class TutorialArchitecture(VAEArchitecture):
         dec = keras.Model(latent_inputs, decoder_outputs, name="decoder")
 
         return dec
-

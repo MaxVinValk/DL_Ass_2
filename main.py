@@ -12,7 +12,14 @@ from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
 
 if __name__ == '__main__':
 
-    DATA_PATH = "celeba_vsmall/data"
+    # arch = PaperArchitecture((64, 64, 3), 100)
+    # print(arch.encoder.summary())
+    # print('\n\n', arch.decoder.summary())
+    # vae = VAE(arch)
+    # vae.save()
+    # exit()
+
+    DATA_PATH = "img_align_celeba/"
 
     TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     EXP_DIR = f"Experiment_{TIME_STAMP}"
@@ -34,10 +41,11 @@ if __name__ == '__main__':
 
     celeba_data = CelebA(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-    architecture = TutorialArchitecture(input_shape, latent_dim) #PaperArchitecture(input_shape, latent_dim)
+    # PaperArchitecture(input_shape, latent_dim)
+    architecture = PaperArchitecture(input_shape, latent_dim)
 
     # Swap this out for any of the other loss functions in custom_loss.custom_loss_functions
-    loss_function = ReconLoss() #PaperLoss123(input_shape, BATCH_SIZE)
+    loss_function = ReconLoss()  # PaperLoss123(input_shape, BATCH_SIZE)
 
     # The optimizer calls the schedule once per train_step = 1 batch,
     # we only want to change the learning rate after a batch, and we want the
