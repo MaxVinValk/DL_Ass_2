@@ -13,7 +13,7 @@ from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
 
 if __name__ == '__main__':
 
-    DATA_PATH = "celeba_cropped/data"
+    DATA_PATH = "celeba_cropped"
 
     TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     EXP_DIR = f"Experiment_{TIME_STAMP}"
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     LOG_DIR = f"{EXP_DIR}/logs"
 
-    EPOCHS = 5
+    EPOCHS = 30
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":

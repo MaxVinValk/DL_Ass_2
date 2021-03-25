@@ -22,7 +22,7 @@ class PaperLoss(CustomLoss):
         self.beta = beta
 
         self.add_loss("kl_loss", KLDCalculator(alpha=alpha))
-        self.add_loss("fpl_loss", FPLCalculator(input_shape, batch_size, loss_layers, beta))
+        self.add_loss("fp_loss", FPLCalculator(input_shape, batch_size, loss_layers, beta))
 
     def __str__(self):
         return "FPL + KLD:\n" + \

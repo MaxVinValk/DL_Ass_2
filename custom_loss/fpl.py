@@ -7,6 +7,7 @@ from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras import layers
 # from enum import Enum
 from custom_loss.vgg_relu_layers import VGG_ReLu_Layer
+import sys
 
 
 class FPL():
@@ -73,6 +74,9 @@ class FPL():
         self.l1 = models[0]
         self.l2 = models[1]
         self.l3 = models[2]
+        self.l1_output = self.l1.output_shape
+        self.l2_output = self.l2.output_shape
+        self.l3_output = self.l3.output_shape
         return models
 
     def calculate_fp_loss(self, img1, img2):
@@ -93,15 +97,34 @@ class FPL():
         l3_real = self.l3(l2_real)
         l3_gen = self.l3(l2_gen)
 
-        l1_loss = self.beta[0] * \
-            tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3])
-        l2_loss = self.beta[1] * \
-            tf.reduce_sum(tf.square(l2_real - l2_gen), [1, 2, 3])
-        l3_loss = self.beta[2] * \
-            tf.reduce_sum(tf.square(l3_real - l3_gen), [1, 2, 3])
-        # total_loss = tf.add_n([l1_loss, l2_loss, l3_loss])
+        # # Print statements
+        # print('shape:', self.l1.output_shape[1])
+        # print('shape:', self.l1.output_shape[2])
+        # print('shape:', self.l1.output_shape[3])
+        # print('real type:', l1_real)
+        # print('gen type:', l1_gen)
+        # print('square:', tf.square(l1_real - l1_gen))
+        # print('redu_sum:', tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3]))
+        # print('beta:', self.beta[0])
+        # # print('*\\', self.beta[0] * \
+        # #     tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3]))
+        # print('muliply', tf.multiply(self.beta[0],
+        #     tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3])))
+        
 
-        total_loss = tf.reduce_mean(l1_loss + l2_loss + l3_loss)
+
+        l1_loss = tf.multiply(self.beta[0],
+            tf.reduce_sum(tf.square(tf.subtract(l1_real, l1_gen)), [1, 2, 3]))
+        l2_loss = tf.multiply(self.beta[1],
+            tf.reduce_sum(tf.square(tf.subtract(l2_real, l2_gen)), [1, 2, 3]))
+        l3_loss = tf.multiply(self.beta[2],
+            tf.reduce_sum(tf.square(tf.subtract(l3_real, l3_gen)), [1, 2, 3]))
+
+        total_loss_1 = tf.divide(tf.divide(tf.divide(l1_loss, self.l1_output[1]), self.l1_output[2]), self.l1_output[3])
+        total_loss_2 = tf.divide(tf.divide(tf.divide(l2_loss, self.l2_output[1]), self.l2_output[2]), self.l2_output[3])
+        total_loss_3 = tf.divide(tf.divide(tf.divide(l3_loss, self.l3_output[1]), self.l3_output[2]), self.l3_output[3])
+
+        total_loss = tf.add_n([total_loss_1, total_loss_2, total_loss_3])
         return total_loss
 
         pixel_loss = []
