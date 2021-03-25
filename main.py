@@ -13,7 +13,7 @@ from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
 
 if __name__ == '__main__':
 
-    DATA_PATH = "celeba_cropped"
+    DATA_PATH = "celeba_cropped_small"
 
     TIME_STAMP = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     EXP_DIR = f"Experiment_{TIME_STAMP}"

@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     batch_size = 4
     fpl = FPL(batch_size=batch_size, input_shape=(64, 64, 3),
-              loss_layers=[VGG_ReLu_Layer.ONE, VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE], beta=[0.5, 0.5, 0.5])
+              loss_layers=[VGG_ReLu_Layer.ONE, VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE], beta=[100, 100, 100])
 
     # TODO remove, this is for test purposes only.
     def load_celeba(folder, batch_size, image_size):
