@@ -113,18 +113,17 @@ class FPL():
         
 
 
-        l1_loss = tf.multiply(self.beta[0],
-            tf.reduce_sum(tf.square(tf.subtract(l1_real, l1_gen)), [1, 2, 3]))
-        l2_loss = tf.multiply(self.beta[1],
-            tf.reduce_sum(tf.square(tf.subtract(l2_real, l2_gen)), [1, 2, 3]))
-        l3_loss = tf.multiply(self.beta[2],
-            tf.reduce_sum(tf.square(tf.subtract(l3_real, l3_gen)), [1, 2, 3]))
+        l1_loss = tf.reduce_sum(tf.square(tf.subtract(l1_real, l1_gen)), [1, 2, 3])
+        l2_loss = tf.reduce_sum(tf.square(tf.subtract(l2_real, l2_gen)), [1, 2, 3])
+        l3_loss = tf.reduce_sum(tf.square(tf.subtract(l3_real, l3_gen)), [1, 2, 3])
 
-        total_loss_1 = tf.divide(tf.divide(tf.divide(l1_loss, self.l1_output[1]), self.l1_output[2]), self.l1_output[3])
-        total_loss_2 = tf.divide(tf.divide(tf.divide(l2_loss, self.l2_output[1]), self.l2_output[2]), self.l2_output[3])
-        total_loss_3 = tf.divide(tf.divide(tf.divide(l3_loss, self.l3_output[1]), self.l3_output[2]), self.l3_output[3])
+        total_loss_1 = tf.divide(tf.divide(tf.divide(tf.divide(l1_loss, self.l1_output[1]), self.l1_output[2]), self.l1_output[3]), 2)
+        total_loss_2 = tf.divide(tf.divide(tf.divide(tf.divide(l2_loss, self.l2_output[1]), self.l2_output[2]), self.l2_output[3]), 2)
+        total_loss_3 = tf.divide(tf.divide(tf.divide(tf.divide(l3_loss, self.l3_output[1]), self.l3_output[2]), self.l3_output[3]), 2)
 
-        total_loss = tf.add_n([total_loss_1, total_loss_2, total_loss_3])
+        total_loss = tf.add_n([ tf.multiply(self.beta[0], total_loss_1), 
+                                tf.multiply(self.beta[1], total_loss_2),
+                                tf.multiply(self.beta[0], total_loss_3)])
         return total_loss
 
         pixel_loss = []

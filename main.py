@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     LOG_DIR = f"{EXP_DIR}/logs"
 
-    EPOCHS = 30
+    EPOCHS = 7
 
     for i in range(1, len(sys.argv)):
         if sys.argv[i] == "--folder":
