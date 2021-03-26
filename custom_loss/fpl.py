@@ -30,54 +30,40 @@ class FPL():
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.loss_layers = loss_layers
-        self.beta = beta
+        self.beta = [tf.constant(float(b)) for b in beta]
         # Creating the models
-        self.models = self.create_models()
+        self.models, self.div_facs = self.create_models()
 
-    def create_models(self) -> List:
+    def create_models(self):
         """Creating sub-models of VGG19 for loss computation per layer
 
         Returns:
             List[tf.keras.Model]: List of the sub-models of VGG19
+            List[div_facs]: Tensors that give the normalising factor for each layer
         """
-        # Classes not defined? classes=<number of classes>
-        # If there is some kind of 'CERTIFICATE_VERIFY_FAILED' error, go to: 'Appplications/Python 3.6', and double click 'Install Certificates.command'
-        model_vgg = VGG19(input_shape=self.input_shape,
+
+        models = []
+        div_facs = []
+
+        vgg = VGG19(input_shape=self.input_shape,
                           weights="imagenet", include_top=False)
 
-        # Extra print statements
-        # print('vgg summary:')
-        # model_vgg.summary()
-
-        # Building all models
-        models = []
-        for idx, layer in enumerate(self.loss_layers):
-            # Take specific layers of the VGG19 model
-            layers = model_vgg.layers[(
-                0 if idx == 0 else self.loss_layers[idx-1].value+1):layer.value+1]  # '+1', since the Input is seen as a layer
-            model = keras.Sequential(name="model_" + str(idx), layers=layers)
-            model.trainable = False
-
-            # Setting correct input shape
-            sub_input_shape = (self.input_shape if idx ==
-                               0 else models[idx - 1].output_shape)
-            model.build(input_shape=(sub_input_shape))
-
-            # # Extra print statements
-            # for l in layers:
-            #     print(l)
-            # print('inpshape', sub_input_shape)
-            # model.summary()
+        for layer in self.loss_layers:
+            model = keras.Model(inputs=vgg.inputs,
+                                outputs=vgg.layers[layer].output, trainable=False)
+            div_fac = self.get_div_fac(vgg.layers[layer])
 
             models.append(model)
+            div_facs.append(div_fac)
 
-        self.l1 = models[0]
-        self.l2 = models[1]
-        self.l3 = models[2]
-        self.l1_output = self.l1.output_shape
-        self.l2_output = self.l2.output_shape
-        self.l3_output = self.l3.output_shape
-        return models
+        return models, div_facs
+
+
+    def get_div_fac(self, layer):
+        os = layer.output_shape
+        fv = [float(x) for x in layer.output_shape[1:]]
+
+        return tf.multiply(float(tf.constant(2)), tf.multiply(fv[0], tf.multiply(fv[1], fv[2])))
 
     def calculate_fp_loss(self, img1, img2):
         """Calculating feature perceptual loss of 2 images
@@ -90,90 +76,19 @@ class FPL():
         Returns:
             float: Feature perceptual loss
         """
-        l1_real = self.l1(img1)
-        l1_gen = self.l1(img2)
-        l2_real = self.l2(l1_real)
-        l2_gen = self.l2(l1_gen)
-        l3_real = self.l3(l2_real)
-        l3_gen = self.l3(l2_gen)
 
-        # # Print statements
-        # print('shape:', self.l1.output_shape[1])
-        # print('shape:', self.l1.output_shape[2])
-        # print('shape:', self.l1.output_shape[3])
-        # print('real type:', l1_real)
-        # print('gen type:', l1_gen)
-        # print('square:', tf.square(l1_real - l1_gen))
-        # print('redu_sum:', tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3]))
-        # print('beta:', self.beta[0])
-        # # print('*\\', self.beta[0] * \
-        # #     tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3]))
-        # print('muliply', tf.multiply(self.beta[0],
-        #     tf.reduce_sum(tf.square(l1_real - l1_gen), [1, 2, 3])))
-        
+        losses = []
 
+        for model, div_fac, beta in zip(self.models, self.div_facs, self.beta):
+            activation_real = model(img1)
+            activation_gen = model(img2)
 
-        l1_loss = tf.reduce_sum(tf.square(tf.subtract(l1_real, l1_gen)), [1, 2, 3])
-        l2_loss = tf.reduce_sum(tf.square(tf.subtract(l2_real, l2_gen)), [1, 2, 3])
-        l3_loss = tf.reduce_sum(tf.square(tf.subtract(l3_real, l3_gen)), [1, 2, 3])
+            loss = tf.reduce_sum(tf.square(tf.subtract(activation_real, activation_gen)), [1, 2, 3])
+            dividedLoss = tf.divide(loss, div_fac)
 
-        total_loss_1 = tf.divide(tf.divide(tf.divide(tf.divide(l1_loss, self.l1_output[1]), self.l1_output[2]), self.l1_output[3]), 2)
-        total_loss_2 = tf.divide(tf.divide(tf.divide(tf.divide(l2_loss, self.l2_output[1]), self.l2_output[2]), self.l2_output[3]), 2)
-        total_loss_3 = tf.divide(tf.divide(tf.divide(tf.divide(l3_loss, self.l3_output[1]), self.l3_output[2]), self.l3_output[3]), 2)
+            betaScaledLoss = tf.multiply(beta, dividedLoss)
 
-        total_loss = tf.add_n([ tf.multiply(self.beta[0], total_loss_1), 
-                                tf.multiply(self.beta[1], total_loss_2),
-                                tf.multiply(self.beta[0], total_loss_3)])
+            losses.append(betaScaledLoss)
+
+        total_loss = tf.add_n(losses)
         return total_loss
-
-        pixel_loss = []
-        fp_losses = []
-        prediction_1 = img1
-        prediction_2 = img2
-        # For every model, caculate the feature perceptual loss
-        for idx, model in enumerate(self.models):
-            prediction_1 = model(prediction_1)
-            prediction_2 = model(prediction_2)
-            mse = tf.keras.losses.MeanSquaredError(reduction='auto')
-            pixel_loss.append(mse(prediction_1, prediction_2))
-
-            fp_losses.append(tf.reduce_sum(pixel_loss[idx]))
-
-            # Extra print statements
-            # print('prediction shape', prediction_1.shape)
-            # print('pixel loss', pixel_loss[idx])
-            # print('pixel loss shape', pixel_loss[idx].shape)
-            # print('shape :', prediction_1.shape)
-        # Computing total loss by element wise multiplication of pf_losses and beta
-        total_loss = sum([f*b for f,
-                          b in zip(fp_losses, self.beta)])
-        return total_loss
-
-
-if __name__ == '__main__':
-    """Test the funcionality of the feature perceptual loss class
-    """
-
-    batch_size = 4
-    fpl = FPL(batch_size=batch_size, input_shape=(64, 64, 3),
-              loss_layers=[VGG_ReLu_Layer.ONE, VGG_ReLu_Layer.TWO, VGG_ReLu_Layer.THREE], beta=[100, 100, 100])
-
-    # TODO remove, this is for test purposes only.
-    def load_celeba(folder, batch_size, image_size):
-        # NOTE: shuffle is set to false, for test purposes (checking if presenting unshuffled data twice will result in 0 loss)
-        train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-            folder, image_size=image_size, batch_size=batch_size, shuffle=False)
-
-        normalization_layer = layers.experimental.preprocessing.Rescaling(
-            1. / 255)
-        normalized_ds = train_ds.map(lambda x, y: normalization_layer(x))
-        print(normalized_ds)
-        return normalized_ds
-
-    # Getting test images (created an extra dataset for this; could be changed to default, but will take long)
-    img1 = load_celeba("celeba_one_image/data", batch_size, (64, 64))
-    img2 = load_celeba("celeba_one_image2/data", batch_size, (64, 64))
-
-    # Calculate the loss for a single image
-    loss = fpl.calculate_fp_loss(img1, img2)
-    print('fp_loss:', loss)
