@@ -61,8 +61,8 @@ def get_lowest_final(data):
     results = []
 
     for key, value in data.items():
-        total_loss = value["epoch_kl_loss"] + value["epoch_fp_loss"]
-        results.append([key, total_loss, value["epoch_kl_loss"], value["epoch_fp_loss"]])
+        total_loss = value["epoch_kl_loss"][-1] + value["epoch_fp_loss"][-1]
+        results.append([key, total_loss, value["epoch_kl_loss"][-1], value["epoch_fp_loss"][-1]])
 
     sortedResults = sorted(results, key=itemgetter(1))
 
