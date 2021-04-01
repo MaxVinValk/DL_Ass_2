@@ -10,6 +10,7 @@ from data.dataset_loader import CelebA
 from vae.vae import VAE
 from vae.vae_architectures import PaperArchitecture, TutorialArchitecture
 
+from util.beta_iterator import BetaIterator
 
 if __name__ == '__main__':
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     EXP_DIR = f"Experiment_{TIME_STAMP}"
     os.mkdir(EXP_DIR)
 
-    LOG_DIR = f"{EXP_DIR}/logs"
+    # LOG_DIR = f"{EXP_DIR}/logs"
 
     EPOCHS = 7
 
@@ -39,33 +40,44 @@ if __name__ == '__main__':
 
     data = CelebA(DATA_PATH, BATCH_SIZE, (RESIZE_HEIGHT, RESIZE_WIDTH))
 
-    # PaperArchitecture(input_shape, latent_dim)
-    architecture = PaperArchitecture(input_shape, latent_dim)
+    betas = BetaIterator(beta_sum = 150, max_ratio = 5)
 
-    # Swap this out for any of the other loss functions in custom_loss.custom_loss_functions
-    loss_function = PaperLoss123(input_shape, BATCH_SIZE)
+    for ratios, betas in iter(betas):
 
-    # The optimizer calls the schedule once per train_step = 1 batch,
-    # we only want to change the learning rate after a batch, and we want the
-    # learning rate to remain the same in between these adjustments
-    learning_rate_schedule = keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=0.0005,
-        decay_steps=data.get_batches_per_epoch(),
-        decay_rate=0.5,
-        staircase=True
-    )
+        ratioString = str(ratios).replace("[", "").replace("]", "").replace(",", "").replace(" ", "_")
 
-    vae = VAE(architecture)
+        runFolderName = f"{EXP_DIR}/{ratioString}"
+        runFolderLogs = f"{EXP_DIR}/{ratioString}/logs"
 
-    vae.train(data=data, epochs=EPOCHS, custom_loss=loss_function, learning_rate=learning_rate_schedule,
-              log_dir=LOG_DIR)
+        os.mkdir(runFolderName)
 
-    vae.save(EXP_DIR)
 
-    with open(f"{EXP_DIR}/info.txt", "w") as f:
-        f.write("GENERAL:\n\n" + f"Epochs: {EPOCHS}\n\n")
-        f.write("DATA:\n\n" + str(data) + "\n\n")
-        f.write("ARCHITECTURE:\n\n" + str(architecture) + "\n\n")
-        f.write("LOSS FUNCTION:\n\n" + str(loss_function))
+        architecture = PaperArchitecture(input_shape, latent_dim)
+
+        # Swap this out for any of the other loss functions in custom_loss.custom_loss_functions
+        loss_function = PaperLoss123(input_shape, BATCH_SIZE)
+
+        # The optimizer calls the schedule once per train_step = 1 batch,
+        # we only want to change the learning rate after a batch, and we want the
+        # learning rate to remain the same in between these adjustments
+        learning_rate_schedule = keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.0005,
+            decay_steps=data.get_batches_per_epoch(),
+            decay_rate=0.5,
+            staircase=True
+        )
+
+        vae = VAE(architecture)
+
+        vae.train(data=data, epochs=EPOCHS, custom_loss=loss_function, learning_rate=learning_rate_schedule,
+                  log_dir=runFolderLogs)
+
+        vae.save(runFolderName)
+
+        with open(f"{runFolderName}/info.txt", "w") as f:
+            f.write("GENERAL:\n\n" + f"Epochs: {EPOCHS}\n\n")
+            f.write("DATA:\n\n" + str(data) + "\n\n")
+            f.write("ARCHITECTURE:\n\n" + str(architecture) + "\n\n")
+            f.write("LOSS FUNCTION:\n\n" + str(loss_function))
 
 
