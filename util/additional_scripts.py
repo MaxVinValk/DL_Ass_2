@@ -9,7 +9,11 @@
     imageSize: The size of the image that we accept. A 2D tuple
 
     enc: The loaded encoder
-
+'''
+import os
+import pandas as pd
+import numpy as np
+from PIL import Image
 
 
 def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
@@ -22,7 +26,7 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
 
     for attribute in attributeNames:
         featureCount[attribute] = 0
-        featureVectors[attribute] = np.zeros(shape=(1, 50))
+        featureVectors[attribute] = np.zeros(shape=(1, 100))
 
     ctr = 0
 
@@ -37,7 +41,7 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
             img = np.array(Image.open(
                 f"{folder}/{filename}").resize(imageSize))
             img = (img / 255)
-            # img = img.reshape(1, 128, 128, 3)
+            img = img.reshape((1, imageSize[0], imageSize[1], 3))
 
             _, _, z = enc(img)
             z = z.numpy()
@@ -54,4 +58,4 @@ def create_celeba_feature_averages(folder, featureFile, imageSize, enc):
         featureVectors[attribute] /= featureCount[attribute]
 
     return featureVectors, featureCount
-'''
+
