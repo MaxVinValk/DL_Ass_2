@@ -15,7 +15,7 @@ def name_and_val_from_string(string):
 def get_v2_file(folder):
     for f in os.scandir(folder):
         if not f.is_dir() and f.name.endswith(".v2"):
-            return f
+            return f.name
     print("No V2 file found...")
     exit(1)
 
@@ -51,8 +51,8 @@ def collect_results(root):
 
     for f in os.scandir(root):
         if f.is_dir():
-            v2 = get_v2_file(f"{root}/{f}/logs/train")
-            results[str(f)] = file_to_data(f"{root}/{f}/logs/train/{v2}")
+            v2 = get_v2_file(f"{root}/{f.name}/logs/train")
+            results[f.name] = file_to_data(f"{root}/{f.name}/logs/train/{v2}")
 
     return results
 
